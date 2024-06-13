@@ -97,13 +97,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['updateUser'])) {
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['startTreatment'])) {
     $patientId = $_POST['patientId'];
-    $treatmentDescription = $_POST['treatmentDescription'];
+    $treatmentDescription = $_POST['comments'];
     $startDate = $_POST['startDate'];
-    $endDate = $_POST['endDate'];
+    $periodicity = $_POST['periodicity'];
 
     // Insert the new treatment into the treatments table
-    $stmt = $connect->prepare("INSERT INTO treatments (PATIENT_ID, DOCTOR_ID, DESCRIPTION, START_DATE, END_DATE) VALUES (?, ?, ?, ?, ?)");
-    $stmt->bind_param("iisss", $patientId, $doctor_id, $treatmentDescription, $startDate, $endDate);
+    $stmt = $connect->prepare("INSERT INTO treatments (PATIENT_ID, DOCTOR_ID, COMMENTS, START_DATE,PERIODICITY) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("iisss", $patientId, $doctor_id, $treatmentDescription, $startDate, $periodicity );
     $stmt->execute();
     $stmt->close();
 }
