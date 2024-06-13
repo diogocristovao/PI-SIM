@@ -15,7 +15,7 @@
         <option disabled selected value> -- select an option -- </option>
         <option value="M">Médico</option>
         <option value="P">Paciente</option>
-        <option value="Adm">Administrador</option>
+        <option value="ADMIN">Administrador</option>
     </select></p>
     <div id="admin-code-section" style="display:none;">
         <label for="admin-code">Código de Administrador:</label>
