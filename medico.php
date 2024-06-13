@@ -26,7 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['name'])) {
 
     // Insere o novo usuário na tabela users
     $stmt = $connect->prepare("INSERT INTO users (NAME, ADRESS, PHONE_NUMBER, USERNAME, PASSWORD, USER_TYPE, PHOTO, EMAIL, CREATION_DATE) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-    $stmt->bind_param("ssissbss", $name, $address, $contacts, $username, $password, $user_type, $photo, $email);
+    $stmt->bind_param("ssisssbs", $name, $address, $contacts, $username, $password, $user_type, $photo, $email);
     $stmt->execute();
     $new_user_id = $stmt->insert_id; // Obtém o ID do novo usuário inserido
     $stmt->close();
@@ -209,8 +209,12 @@ $patients = $connect->query("SELECT users.ID, users.NAME FROM users INNER JOIN p
                 <input type="date" class="form-control" id="startDate" name="startDate" required>
             </div>
             <div class="mb-3">
-                <label for="endDate" class="form-label">Data de Término:</label>
-                <input type="date" class="form-control" id="endDate" name="endDate">
+                <label for="startDate" class="form-label">Periodicidade:</label>
+                <input type="text" class="form-control" id="periodicity" name="periodicity" required>
+            </div>
+            <div class="mb-3">
+                <label for="startDate" class="form-label">Comentários:</label>
+                <input type="text" class="form-control" id="comments" name="comments" required>
             </div>
             <button type="submit" class="btn btn-primary">Iniciar Tratamento</button>
         </form>
@@ -314,9 +318,9 @@ $treatments_query = $connect->query("SELECT * FROM treatments WHERE DOCTOR_ID = 
 while ($treatment = $treatments_query->fetch_assoc()): ?>
     <div>
         <h5>Tratamento para Paciente ID <?= $treatment['PATIENT_ID'] ?>:</h5>
-        <p>Descrição: <?= htmlspecialchars($treatment['DESCRIPTION']) ?></p>
         <p>Data de Início: <?= htmlspecialchars($treatment['START_DATE']) ?></p>
-        <p>Data de Término: <?= htmlspecialchars($treatment['END_DATE']) ?></p>
+        <p>Periodicidade: <?= htmlspecialchars($treatment['PERIODICITY']) ?></p>
+        <p>Comentários: <?= htmlspecialchars($treatment['COMMENTS']) ?></p>
     </div>
 <?php endwhile; ?>
 </html>
