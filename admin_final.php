@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-$connect = mysqli_connect("localhost", "root", "", "sim");
+$connect = mysqli_connect("localhost", "root", "", "pi-sim");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['name'])) {
     $name = $_POST['name'];
@@ -16,7 +16,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['name'])) {
     $stmt->bind_param("ssssssb", $name, $address, $contacts, $username, $password, $user_type, $photo);
     $stmt->execute();
     $stmt->close();
-}
+
+    if ($user_type == 'M') {
+        $speciality = $_POST['speciality'];
+
+        $stmt = $connect->prepare("INSERT INTO doctors (ID, SPECIALITY) VALUES (?, ?)");
+        $stmt->bind_param("is", $user_id, $speciality);
+    if (!$stmt->execute()) {
+        die("Error inserting doctor: " . $stmt->error);
+    }
+}}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['search'])) {
     $search = $_POST['search'];
@@ -95,11 +104,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['updateUser'])) {
             </div>
             <div class="mb-3">
                 <label for="user_type" class="form-label">Tipo de Utilizador:</label>
-                <select class="form-select" id="user_type" name="user_type" required>
+                <select class="form-select" id="user_type" name="user_type" onchange="toggleSpecialityField()" required>
                     <option value="ADMIN">Administrador</option>
                     <option value="M">Médico</option>
                     <option value="P">Paciente</option>
                 </select>
+            </div>
+            <div class="mb-3" id="specialityField" style="display: none;">
+                <label for="speciality" class="form-label">Especialidade:</label>
+                <input type="text" class="form-control" id="speciality" name="speciality">
             </div>
             <div class="mb-3">
                 <label for="photo" class="form-label">Fotografia:</label>
@@ -109,6 +122,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['updateUser'])) {
         </form>
     </div>
 </div>
+
+
+<script>
+    function toggleSpecialityField() {
+        var userType = document.getElementById("user_type").value;
+        var specialityField = document.getElementById("specialityField");
+
+        if (userType === "M") {
+            specialityField.style.display = "block";
+        } else {
+            specialityField.style.display = "none";
+        }
+    }
+</script>
 
 <div class="card my-4">
     <div class="card-header">
