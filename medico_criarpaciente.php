@@ -49,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['search'])) {
     $users = $connect->query("SELECT u.ID, u.NAME, u.ADRESS, u.PHONE_NUMBER, u.USERNAME, u.USER_TYPE, u.PHOTO, u.CREATION_DATE FROM users u INNER JOIN patient_doctor_relation pdr ON u.ID = pdr.patient_id WHERE u.USER_TYPE = 'P' AND pdr.doctor_id = $_SESSION[user_id] AND u.NAME LIKE '%$search%'");
 } else {
     // Consulta SQL para buscar todos os pacientes associados ao médico da sessão
-    $users = $connect->query("SELECT users.ID, users.NAME, users.ADRESS, users.PHONE_NUMBER, users.USERNAME, users.USER_TYPE, users.PHOTO, users.CREATION_DATE FROM users INNER JOIN patient_doctor_relation ON users.ID = patient_doctor_relation.PATIENT_ID WHERE users.USER_TYPE = 'P' AND patient_doctor_relation.DOCTOR_ID = $_SESSION[user_id]");
+    $users = $connect->query("SELECT users.ID, users.NAME, users.ADRESS, users.PHONE_NUMBER, users.USERNAME, users.USER_TYPE, users.PHOTO, users.CREATION_DATE FROM users INNER JOIN patient_doctor_relation ON users.ID = patient_doctor_relation.PATIENT_ID WHERE patient_doctor_relation.DOCTOR_ID = $doctor_id");
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['deleteUser'])) {
@@ -190,7 +190,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['updateUser'])) {
         <th>ID</th>
         <th>Nome</th>
         <th>Username</th>
-        <th>Tipo</th>
         <th>Ações</th>
     </tr>
     </thead>
@@ -200,7 +199,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['updateUser'])) {
             <td><?= $user['ID'] ?></td>
             <td><?= $user['NAME'] ?></td>
             <td><?= $user['USERNAME'] ?></td>
-            <td><?= $user['USER_TYPE'] ?></td>
             <td>
                 <form method="post" action="" style="display:inline-block">
                     <input type="hidden" name="userId" value="<?= $user['ID'] ?>">
