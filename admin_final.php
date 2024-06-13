@@ -33,18 +33,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['name'])) {
     }
 }
 
-
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['search'])) {
     $search = $_POST['search'];
-    $users = $connect->query("SELECT ID, NAME, ADRESS, PHONE_NUMBER, USERNAME, USER_TYPE, PHOTO, CREATION_DATE FROM users WHERE NAME LIKE '%$search%'");
+    $users = $connect->query("SELECT ID, NAME, ADRESS, PHONE_NUMBER, USERNAME, USER_TYPE, PHOTO, CREATION_DATE FROM users WHERE NAME LIKE '%$search%' AND END_DATE IS NULL");
 } else {
-    $users = $connect->query("SELECT ID, NAME, ADRESS, PHONE_NUMBER, USERNAME, USER_TYPE, PHOTO, CREATION_DATE FROM users");
+    $users = $connect->query("SELECT ID, NAME, ADRESS, PHONE_NUMBER, USERNAME, USER_TYPE, PHOTO, CREATION_DATE FROM users WHERE END_DATE IS NULL");
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['deleteUser'])) {
     $userId = $_POST['userId'];
-    $stmt = $connect->prepare("DELETE FROM users WHERE ID = ?");
+    $stmt = $connect->prepare("UPDATE users SET END_DATE = NOW() WHERE ID = ?");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
     $stmt->close();
@@ -131,7 +129,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['updateUser'])) {
     </div>
 </div>
 
-
 <script>
     function toggleSpecialityField() {
         var userType = document.getElementById("user_type").value;
@@ -181,67 +178,97 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['updateUser'])) {
             <td>
                 <form method="post" action="" style="display:inline-block">
                     <input type="hidden" name="userId" value="<?= $user['ID'] ?>">
-                    <button type="submit" name="deleteUser" class="btn btn-danger" onclick="return confirm('Tem a certeza que pretende eliminar?');">Apagar</button>
+                    <button type="submit" name="deleteUser" class="btn btn-danger" onclick="return confirm('Tem a certeza que pretende desativar?');">Desativar</button>
                 </form>
-                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#updateModal<?= $user['ID'] ?>">Atualizar</button>
+                <button class="btn btn-secondary" onclick="openUpdateForm(<?= $user['ID'] ?>)">Atualizar</button>
             </td>
         </tr>
-
-        <!-- Modal Atualizar -->
-        <div class="modal fade" id="updateModal<?= $user['ID'] ?>" tabindex="-1" aria-labelledby="updateModalLabel<?= $user['ID'] ?>" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="updateModalLabel<?= $user['ID'] ?>">Atualizar Utilizador</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form method="post" action="" enctype="multipart/form-data">
-                            <input type="hidden" name="userId" value="<?= $user['ID'] ?>">
-                            <div class="mb-3">
-                                <label for="name" class="form-label">Nome:</label>
-                                <input type="text" class="form-control" id="name" name="name" value="<?= htmlspecialchars($user['NAME']) ?>" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="address" class="form-label">Morada:</label>
-                                <input type="text" class="form-control" id="address" name="address" value="<?= htmlspecialchars($user['ADRESS']) ?>" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="contacts" class="form-label">Contactos:</label>
-                                <input type="text" class="form-control" id="contacts" name="contacts" value="<?= htmlspecialchars($user['PHONE_NUMBER']) ?>" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="username" class="form-label">Username:</label>
-                                <input type="text" class="form-control" id="username" name="username" value="<?= htmlspecialchars($user['USERNAME']) ?>" required>
-                            </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Password:</label>
-                                <input type="password" class="form-control" id="password" name="password">
-                                <small class="form-text text-muted">Deixe em branco se não quiser alterar a senha.</small>
-                            </div>
-                            <div class="mb-3">
-                                <label for="user_type" class="form-label">Tipo de Utilizador:</label>
-                                <select class="form-select" id="user_type" name="user_type" required>
-                                    <option value="ADMIN" <?= $user['USER_TYPE'] == 'ADMIN' ? 'selected' : '' ?>>Administrador</option>
-                                    <option value="M" <?= $user['USER_TYPE'] == 'M' ? 'selected' : '' ?>>Médico</option>
-                                    <option value="P" <?= $user['USER_TYPE'] == 'P' ? 'selected' : '' ?>>Paciente</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label for="photo" class="form-label">Fotografia:</label>
-                                <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
-                                <small class="form-text text-muted">Deixe em branco se não quiser alterar a fotografia.</small>
-                            </div>
-                            <button type="submit" name="updateUser" class="btn btn-primary">Atualizar</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     <?php endwhile; ?>
     </tbody>
 </table>
 
-<?php include 'footer.html'; ?>
+<div id="updateFormModal" class="modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Atualizar Utilizador</h5>
+                <button type="button" class="btn-close" aria-label="Close" onclick="closeUpdateForm()"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="" enctype="multipart/form-data">
+                    <input type="hidden" name="updateUser" value="1">
+                    <input type="hidden" name="userId" id="updateUserId">
+                    <div class="mb-3">
+                        <label for="updateName" class="form-label">Nome:</label>
+                        <input type="text" class="form-control" id="updateName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateAddress" class="form-label">Morada:</label>
+                        <input type="text" class="form-control" id="updateAddress" name="address" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateContacts" class="form-label">Contactos:</label>
+                        <input type="text" class="form-control" id="updateContacts" name="contacts" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateUsername" class="form-label">Username:</label>
+                        <input type="text" class="form-control" id="updateUsername" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="updatePassword" class="form-label">Password (deixe em branco para não alterar):</label>
+                        <input type="password" class="form-control" id="updatePassword" name="password">
+                    </div>
+                    <div class="mb-3">
+                        <label for="updateUserType" class="form-label">Tipo de Utilizador:</label>
+                        <select class="form-select" id="updateUserType" name="user_type" onchange="toggleUpdateSpecialityField()" required>
+                            <option value="ADMIN">Administrador</option>
+                            <option value="M">Médico</option>
+                            <option value="P">Paciente</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="updateSpecialityField" style="display: none;">
+                        <label for="updateSpeciality" class="form-label">Especialidade:</label>
+                        <input type="text" class="form-control" id="updateSpeciality" name="speciality">
+                    </div>
+                    <div class="mb-3">
+                        <label for="updatePhoto" class="form-label">Fotografia (deixe em branco para não alterar):</label>
+                        <input type="file" class="form-control" id="updatePhoto" name="photo" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Atualizar Utilizador</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openUpdateForm(userId) {
+        var userRow = document.querySelector('tr[data-user-id="' + userId + '"]');
+        document.getElementById('updateUserId').value = userId;
+        document.getElementById('updateName').value = userRow.querySelector('.name').innerText;
+        document.getElementById('updateAddress').value = userRow.querySelector('.address').innerText;
+        document.getElementById('updateContacts').value = userRow.querySelector('.contacts').innerText;
+        document.getElementById('updateUsername').value = userRow.querySelector('.username').innerText;
+        document.getElementById('updateUserType').value = userRow.querySelector('.user_type').innerText;
+        toggleUpdateSpecialityField();
+        document.getElementById('updateFormModal').style.display = 'block';
+    }
+
+    function closeUpdateForm() {
+        document.getElementById('updateFormModal').style.display = 'none';
+    }
+
+    function toggleUpdateSpecialityField() {
+        var userType = document.getElementById("updateUserType").value;
+        var specialityField = document.getElementById("updateSpecialityField");
+
+        if (userType === "M") {
+            specialityField.style.display = "block";
+        } else {
+            specialityField.style.display = "none";
+        }
+    }
+</script>
+
+</body>
 </html>
