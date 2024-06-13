@@ -201,10 +201,6 @@ $patients = $connect->query("SELECT users.ID, users.NAME FROM users INNER JOIN p
                 </select>
             </div>
             <div class="mb-3">
-                <label for="treatmentDescription" class="form-label">Descrição do Tratamento:</label>
-                <textarea class="form-control" id="treatmentDescription" name="treatmentDescription" required></textarea>
-            </div>
-            <div class="mb-3">
                 <label for="startDate" class="form-label">Data de Início:</label>
                 <input type="date" class="form-control" id="startDate" name="startDate" required>
             </div>
@@ -213,7 +209,7 @@ $patients = $connect->query("SELECT users.ID, users.NAME FROM users INNER JOIN p
                 <input type="text" class="form-control" id="periodicity" name="periodicity" required>
             </div>
             <div class="mb-3">
-                <label for="startDate" class="form-label">Comentários:</label>
+                <label for="startDate" class="form-label">Descrição do Tratamento:</label>
                 <input type="text" class="form-control" id="comments" name="comments" required>
             </div>
             <button type="submit" class="btn btn-primary">Iniciar Tratamento</button>
@@ -320,7 +316,7 @@ while ($treatment = $treatments_query->fetch_assoc()): ?>
         <h5>Tratamento para Paciente ID <?= $treatment['PATIENT_ID'] ?>:</h5>
         <p>Data de Início: <?= htmlspecialchars($treatment['START_DATE']) ?></p>
         <p>Periodicidade: <?= htmlspecialchars($treatment['PERIODICITY']) ?></p>
-        <p>Comentários: <?= htmlspecialchars($treatment['COMMENTS']) ?></p>
+        <p>Descrição do Tratamento: <?= htmlspecialchars($treatment['COMMENTS']) ?></p>
     </div>
 <?php endwhile; ?>
 </html>
