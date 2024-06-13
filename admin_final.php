@@ -15,17 +15,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['name'])) {
     $stmt = $connect->prepare("INSERT INTO users (NAME, ADRESS, PHONE_NUMBER, USERNAME, PASSWORD, USER_TYPE, PHOTO, CREATION_DATE) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
     $stmt->bind_param("ssssssb", $name, $address, $contacts, $username, $password, $user_type, $photo);
     $stmt->execute();
+
+    $user_id = $stmt->insert_id;
+
     $stmt->close();
 
     if ($user_type == 'M') {
         $speciality = $_POST['speciality'];
+        $username = $_POST['username'];
 
-        $stmt = $connect->prepare("INSERT INTO doctors (ID, SPECIALITY) VALUES (?, ?)");
-        $stmt->bind_param("is", $user_id, $speciality);
-    if (!$stmt->execute()) {
-        die("Error inserting doctor: " . $stmt->error);
+        $stmt = $connect->prepare("INSERT INTO doctors (ID, SPECIALITY, USERNAME) VALUES (?, ?, ?)");
+        $stmt->bind_param("iss", $user_id, $speciality, $username);
+        if (!$stmt->execute()) {
+            die("Error inserting doctor: " . $stmt->error);
+        }
+        $stmt->close();
     }
-}}
+}
+
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['search'])) {
     $search = $_POST['search'];
