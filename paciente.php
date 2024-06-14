@@ -4,6 +4,7 @@ if ($_SESSION['user_type'] != 'P') {
     header("Location: login.php");
     exit();
 }
+
 $connect = new mysqli("localhost", "root", "", "pi-sim");
 include 'sad.php';
 
@@ -15,14 +16,6 @@ function fetchReadings($patient_id, $connect) {
     return $stmt->get_result();
 }
 
-// Function to calculate age from birth date
-function calculateAge($birth_date) {
-    $birthDate = new DateTime($birth_date);
-    $currentDate = new DateTime();
-    $age = $birthDate->diff($currentDate)->y;
-    return $age;
-}
-
 // Add Reading functionality
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_reading'])) {
     $id_treatment = $_POST['id_treatment'];
@@ -30,8 +23,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_reading'])) {
     $ph = $_POST['ph'];
     $temperature = $_POST['temperature'];
     $conductivity = $_POST['conductivity'];
-    $visual = $_POST['visual'];
-    $odor = $_POST['odor'];
+    $visual = intval($_POST['visual']);
+    $odor = intval($_POST['odor']);
 
     // Fetch birth date and calculate age
     $stmt = $connect->prepare("SELECT BIRTH_DATE FROM patients WHERE ID = (SELECT PATIENT_ID FROM treatments WHERE ID = ?)");
@@ -39,13 +32,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_reading'])) {
     $stmt->execute();
     $result = $stmt->get_result()->fetch_assoc();
     $birth_date = $result['BIRTH_DATE'];
-    $age = calculateAge($birth_date);
+    $age = (new DateTime($birth_date))->diff(new DateTime())->y;
 
-    $alert_type = sad($odor, $visual, $temperature, $conductivity, $ph, $age); // Default value, should be calculated
+    $alert_type = sad($odor, $visual, $temperature, $conductivity, $ph, $age);
 
     // Insert the new reading
     $stmt = $connect->prepare("INSERT INTO measurements (ID_TREATMENT, DATETIME, PH, TEMPERATURE, CONDUCTIVITY, VISUAL, ODOR, ALERT_TYPE) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("isddddds", $id_treatment, $datetime, $ph, $temperature, $conductivity, $visual, $odor, $alert_type);
+    $stmt->bind_param("isiiiiis", $id_treatment, $datetime, $ph, $temperature, $conductivity, $visual, $odor, $alert_type);
     $stmt->execute();
 }
 
@@ -89,7 +82,6 @@ if ($current_user['USER_TYPE'] == 'ADMIN') {
     $all_users = $connect->query("SELECT * FROM users");
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -108,6 +100,15 @@ if ($current_user['USER_TYPE'] == 'ADMIN') {
         }
         .navbar {
             margin-bottom: 20px;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .form-control, .form-select {
+            margin-bottom: 10px;
+        }
+        .table th, .table td {
+            vertical-align: middle;
         }
     </style>
 </head>
@@ -135,7 +136,7 @@ if ($current_user['USER_TYPE'] == 'ADMIN') {
                 Add Reading
             </div>
             <div class="card-body">
-                <form method="post" action="">
+                <form method="POST">
                     <input type="hidden" name="add_reading" value="1">
                     <div class="mb-3">
                         <label for="id_treatment" class="form-label">Treatment</label>
@@ -151,7 +152,7 @@ if ($current_user['USER_TYPE'] == 'ADMIN') {
                     </div>
                     <div class="mb-3">
                         <label for="ph" class="form-label">pH</label>
-                        <input type="number" step="0.01" class="form-control" id="ph" name="ph" required>
+                        <input type="number" step="0.1" class="form-control" id="ph" name="ph" required>
                     </div>
                     <div class="mb-3">
                         <label for="temperature" class="form-label">Temperature</label>
@@ -164,18 +165,18 @@ if ($current_user['USER_TYPE'] == 'ADMIN') {
                     <div class="mb-3">
                         <label for="visual" class="form-label">Visual</label>
                         <select class="form-select" id="visual" name="visual" required>
-                            <option value="0">No</option>
-                            <option value="1">Yes</option>
+                            <option value="0">Normal</option>
+                            <option value="1">Alterado</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label for="odor" class="form-label">Odor</label>
                         <select class="form-select" id="odor" name="odor" required>
-                            <option value="0">No</option>
-                            <option value="1">Yes</option>
+                            <option value="0">Normal</option>
+                            <option value="1">Alterado</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary">Add Reading</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
                 </form>
             </div>
         </div>
@@ -190,7 +191,7 @@ if ($current_user['USER_TYPE'] == 'ADMIN') {
                 $readings = fetchReadings($user_id, $connect);
                 if ($readings->num_rows > 0):
                     ?>
-                    <table class="table">
+                    <table class="table table-striped">
                         <thead>
                         <tr>
                             <th>ID</th>
@@ -213,8 +214,8 @@ if ($current_user['USER_TYPE'] == 'ADMIN') {
                                 <td><?= $reading['PH'] ?></td>
                                 <td><?= $reading['TEMPERATURE'] ?></td>
                                 <td><?= $reading['CONDUCTIVITY'] ?></td>
-                                <td><?= $reading['VISUAL'] ? 'Yes' : 'No' ?></td>
-                                <td><?= $reading['ODOR'] ? 'Yes' : 'No' ?></td>
+                                <td><?= $reading['VISUAL'] == 0 ? 'Normal' : 'Alterado' ?></td>
+                                <td><?= $reading['ODOR'] == 0 ? 'Normal' : 'Alterado' ?></td>
                                 <td><?= $reading['ALERT_TYPE'] ?></td>
                             </tr>
                         <?php endwhile; ?>
@@ -278,7 +279,7 @@ if ($current_user['USER_TYPE'] == 'ADMIN') {
             </div>
             <div class="card-body">
                 <?php if ($all_users->num_rows > 0): ?>
-                    <table class="table">
+                    <table class="table table-striped">
                         <thead>
                         <tr>
                             <th>ID</th>
